@@ -2,18 +2,27 @@ import requests
 import json
 
 def emotion_detector(text_to_analyze):
-    """
-    Analyzes sentiment of the given text using an external API.
+    """Analyzes sentiment of the given text using an external API.
     Args: text_to_analyze (str): The text to be analyzed for sentiment.
-    Returns: a dictionary with emotion scores and the dominant emotion
+    Returns: a tuple containing a dictionary with emotion scores and the dominant emotion, and the status code
     """
+    if not text_to_analyze:
+        return {
+            'anger': None,
+            'disgust': None,
+            'fear': None,
+            'joy': None,
+            'sadness': None,
+            'dominant_emotion': None
+        }, 400
+
     # Define the URL for the sentiment analysis API
     url = 'https://sn-watson-sentiment-bert.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/SentimentPredict'
 
     # Create the payload with the text to be analyzed
     payload = { "raw_document": { "text": text_to_analyze } }
 
-    # Set the headers with the required model ID for the API
+    # Set the headers with the required model for the API
     headers = {
         "grpc-metadata-mm-model-id": "sentiment_aggregated-bert-workflow_lang_multi_stock"
     }
@@ -53,4 +62,4 @@ def emotion_detector(text_to_analyze):
         'joy': joy_score,
         'sadness': sadness_score,
         'dominant_emotion': dominant_emotion
-    }
+    }, 200
