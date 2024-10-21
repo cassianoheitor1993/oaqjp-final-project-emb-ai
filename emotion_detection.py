@@ -1,14 +1,11 @@
 import requests
-import json  # Import json to handle response conversion
+import json
 
 def emotion_detector(text_to_analyze):
-    """Analyzes sentiment of the given text using an external API.
-
-    Args:
-        text_to_analyze (str): The text to be analyzed for sentiment.
-
-    Returns:
-        dict: A dictionary containing the emotion scores and the dominant emotion.
+    """
+    Analyzes sentiment of the given text using an external API.
+    Args: text_to_analyze (str): The text to be analyzed for sentiment.
+    Returns: a dictionary with emotion scores and the dominant emotion
     """
     # Define the URL for the sentiment analysis API
     url = 'https://sn-watson-sentiment-bert.labs.skills.network/v1/watson.runtime.nlp.v1/NlpService/SentimentPredict'
@@ -21,42 +18,39 @@ def emotion_detector(text_to_analyze):
         "grpc-metadata-mm-model-id": "sentiment_aggregated-bert-workflow_lang_multi_stock"
     }
 
-    try:
-        # Make the POST request to the API
-        response = requests.post(url, json=payload, headers=headers)
+    response = requests.post(url, json=payload, headers=headers)
 
-        # Check if the response status is OK (200)
-        if response.status_code == 200:
-            # Convert the response text to a dictionary
-            response_dict = response.json()
-            print("API Response:", response_dict)  # Print the full response to inspect its structure
+    # Convert the response text into a dictionary
+    response_dict = json.loads(response.text)
 
-            # Try to extract emotions if available
-            if 'emotionPredictions' in response_dict:
-                emotions = response_dict['emotionPredictions']
-                emotion_scores = {
-                    'anger': emotions['anger'],
-                    'disgust': emotions['disgust'],
-                    'fear': emotions['fear'],
-                    'joy': emotions['joy'],
-                    'sadness': emotions['sadness']
-                }
+    # Extract the required set of emotions and their scores
+    sentiment_mentions = response_dict.get('documentSentiment', {}).get('sentimentMentions', [])
+    if sentiment_mentions:
+        emotions = sentiment_mentions[0].get('sentimentprob', {})
+        anger_score = emotions.get('negative', 0)
+        disgust_score = emotions.get('negative', 0)  # Assuming disgust is part of negative
+        fear_score = emotions.get('negative', 0)  # Assuming fear is part of negative
+        joy_score = emotions.get('positive', 0)
+        sadness_score = emotions.get('negative', 0)  # Assuming sadness is part of negative
+    else:
+        anger_score = disgust_score = fear_score = joy_score = sadness_score = 0
 
-                # Find the dominant emotion
-                dominant_emotion = max(emotion_scores, key=emotion_scores.get)
-                emotion_scores['dominant_emotion'] = dominant_emotion
+    # Find the dominant emotion
+    emotion_scores = {
+        'anger': anger_score,
+        'disgust': disgust_score,
+        'fear': fear_score,
+        'joy': joy_score,
+        'sadness': sadness_score
+    }
+    dominant_emotion = max(emotion_scores, key=emotion_scores.get)
 
-            else:
-                # If the expected key is missing, return the whole response for debugging
-                emotion_scores = {'error': 'emotionPredictions key not found', 'response': response_dict}
-
-        else:
-            # If the response is not successful, return an error message
-            emotion_scores = {'error': 'API request failed with status code ' + str(response.status_code)}
-
-    except requests.exceptions.RequestException as e:
-        # Handle exceptions like network issues
-        emotion_scores = {'error': str(e)}
-
-    # Return the formatted dictionary with emotion scores and dominant emotion
-    return emotion_scores
+    # Return the formatted output
+    return {
+        'anger': anger_score,
+        'disgust': disgust_score,
+        'fear': fear_score,
+        'joy': joy_score,
+        'sadness': sadness_score,
+        'dominant_emotion': dominant_emotion
+    }
