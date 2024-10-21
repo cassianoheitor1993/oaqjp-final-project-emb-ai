@@ -16,7 +16,6 @@ def sent_analyzer():
         return "Invalid text! Please try again!", 200
 
     response, status_code = emotion_detector(text_to_analyze)
-    
     if status_code == 400:
         return jsonify(response), 400
 
